@@ -1,28 +1,19 @@
 """
 QR-Code Based Secure Data Sharing — Flask Backend
-==================================================
-Run:
-    pip install flask cryptography qrcode[pil] Pillow
-    python app.py
-Then open: http://localhost:5000
 """
 
-import os
-import io
-import base64
-import hashlib
-import json
+import os, io, base64, hashlib, json
 
 from flask import Flask, render_template, request, jsonify, send_file
+from flask_cors import CORS
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding, hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 import qrcode
-from qrcode.image.pil import PilImage
-from PIL import Image
 
-app = Flask(__name__)
+app = Flask(__name__)          # Flask will look for templates/ beside this file
+CORS(app)  # Enable CORS for all routes
 
 BACKEND        = default_backend()
 KDF_SALT_SIZE  = 16
@@ -49,14 +40,14 @@ def derive_key(password: str, salt: bytes) -> bytes:
 
 
 def encrypt(plaintext: str, password: str) -> dict:
-    salt      = os.urandom(KDF_SALT_SIZE)
-    iv        = os.urandom(AES_IV_SIZE)
-    key       = derive_key(password, salt)
-    padder    = padding.PKCS7(128).padder()
-    padded    = padder.update(plaintext.encode()) + padder.finalize()
-    cipher    = Cipher(algorithms.AES(key), modes.CBC(iv), backend=BACKEND)
-    enc       = cipher.encryptor()
-    ct        = enc.update(padded) + enc.finalize()
+    salt   = os.urandom(KDF_SALT_SIZE)
+    iv     = os.urandom(AES_IV_SIZE)
+    key    = derive_key(password, salt)
+    padder = padding.PKCS7(128).padder()
+    padded = padder.update(plaintext.encode()) + padder.finalize()
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=BACKEND)
+    enc    = cipher.encryptor()
+    ct     = enc.update(padded) + enc.finalize()
     return {
         "salt": base64.b64encode(salt).decode(),
         "iv":   base64.b64encode(iv).decode(),
@@ -66,21 +57,21 @@ def encrypt(plaintext: str, password: str) -> dict:
 
 
 def decrypt(payload: dict, password: str) -> str:
-    salt      = base64.b64decode(payload["salt"])
-    iv        = base64.b64decode(payload["iv"])
-    ct        = base64.b64decode(payload["ct"])
-    key       = derive_key(password, salt)
-    cipher    = Cipher(algorithms.AES(key), modes.CBC(iv), backend=BACKEND)
-    dec       = cipher.decryptor()
-    padded    = dec.update(ct) + dec.finalize()
-    unpadder  = padding.PKCS7(128).unpadder()
-    plaintext = (unpadder.update(padded) + unpadder.finalize()).decode("utf-8")
-    if sha256_hash(plaintext) != payload["hash"]:
+    salt     = base64.b64decode(payload["salt"])
+    iv       = base64.b64decode(payload["iv"])
+    ct       = base64.b64decode(payload["ct"])
+    key      = derive_key(password, salt)
+    cipher   = Cipher(algorithms.AES(key), modes.CBC(iv), backend=BACKEND)
+    dec      = cipher.decryptor()
+    padded   = dec.update(ct) + dec.finalize()
+    unpadder = padding.PKCS7(128).unpadder()
+    plain    = (unpadder.update(padded) + unpadder.finalize()).decode("utf-8")
+    if sha256_hash(plain) != payload["hash"]:
         raise ValueError("Integrity check failed — SHA-256 mismatch.")
-    return plaintext
+    return plain
 
 
-def make_qr_png(data: str, color: str = "#0a2e26") -> bytes:
+def make_qr_png(data: str) -> bytes:
     qr = qrcode.QRCode(
         error_correction=qrcode.constants.ERROR_CORRECT_M,
         box_size=8,
@@ -88,7 +79,7 @@ def make_qr_png(data: str, color: str = "#0a2e26") -> bytes:
     )
     qr.add_data(data)
     qr.make(fit=True)
-    img = qr.make_image(fill_color=color, back_color="white")
+    img = qr.make_image(fill_color="#1a0533", back_color="white")
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
@@ -103,7 +94,7 @@ def index():
 
 @app.route("/api/encrypt", methods=["POST"])
 def api_encrypt():
-    data     = request.get_json()
+    data     = request.get_json(force=True, silent=True) or {}
     message  = (data.get("message") or "").strip()
     password = (data.get("password") or "").strip()
 
@@ -112,10 +103,9 @@ def api_encrypt():
     if not password or len(password) < 6:
         return jsonify(error="Key must be at least 6 characters."), 400
 
-    payload    = encrypt(message, password)
-    json_str   = json.dumps(payload, separators=(",", ":"))
-    qr_bytes   = make_qr_png(json_str)
-    qr_b64     = base64.b64encode(qr_bytes).decode()
+    payload  = encrypt(message, password)
+    json_str = json.dumps(payload, separators=(",", ":"))
+    qr_b64   = base64.b64encode(make_qr_png(json_str)).decode()
 
     return jsonify(
         payload  = payload,
@@ -126,7 +116,7 @@ def api_encrypt():
 
 @app.route("/api/decrypt", methods=["POST"])
 def api_decrypt():
-    data     = request.get_json()
+    data     = request.get_json(force=True, silent=True) or {}
     raw      = (data.get("payload") or "").strip()
     password = (data.get("password") or "").strip()
 
@@ -147,13 +137,12 @@ def api_decrypt():
 
 @app.route("/api/download-qr", methods=["POST"])
 def api_download_qr():
-    data     = request.get_json()
-    raw      = (data.get("payload") or "").strip()
+    data = request.get_json(force=True, silent=True) or {}
+    raw  = (data.get("payload") or "").strip()
     if not raw:
         return jsonify(error="No payload."), 400
-    qr_bytes = make_qr_png(raw)
     return send_file(
-        io.BytesIO(qr_bytes),
+        io.BytesIO(make_qr_png(raw)),
         mimetype="image/png",
         as_attachment=True,
         download_name="secure_qr.png",
@@ -161,5 +150,5 @@ def api_download_qr():
 
 
 if __name__ == "__main__":
-    print("\n  Secure QR App running at → http://localhost:5000\n")
+    print("\n  SecureQR running → http://localhost:5000\n")
     app.run(debug=True, port=5000)
