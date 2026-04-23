@@ -4,566 +4,426 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SecureQR — Encrypted Data Sharing</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Space+Mono:wght@400;700&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet" />
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg:        #07100e;
-    --bg2:       #0d1f1a;
-    --bg3:       #122820;
-    --border:    rgba(255,255,255,0.07);
-    --border2:   rgba(255,255,255,0.13);
-    --green:     #00e5a0;
-    --green-dim: #00b87d;
-    --green-bg:  rgba(0,229,160,0.07);
-    --green-bg2: rgba(0,229,160,0.13);
-    --text:      #e8f5f1;
-    --muted:     #7da898;
-    --danger:    #ff6b6b;
-    --danger-bg: rgba(255,107,107,0.08);
-    --amber:     #ffc14d;
-    --mono:      'DM Mono', monospace;
-    --display:   'Syne', sans-serif;
-    --body:      'Lato', sans-serif;
-    --radius:    10px;
-    --radius-lg: 16px;
-  }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--body);
-    font-size: 15px;
-    line-height: 1.6;
-    min-height: 100vh;
-  }
-
-  /* ── Grid background ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
-    background-size: 48px 48px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* ── Glow orbs ── */
-  .orb {
-    position: fixed;
-    border-radius: 50%;
-    filter: blur(120px);
-    opacity: 0.15;
-    pointer-events: none;
-    z-index: 0;
-  }
-  .orb-1 { width: 600px; height: 600px; background: #00e5a0; top: -200px; left: -200px; }
-  .orb-2 { width: 400px; height: 400px; background: #004d35; bottom: -100px; right: -100px; }
-
-  /* ── Nav ── */
-  nav {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    height: 60px;
-    background: rgba(7,16,14,0.85);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .nav-logo {
-    font-family: var(--display);
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--green);
-    letter-spacing: -0.5px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .nav-logo svg { width: 22px; height: 22px; }
-
-  .nav-tags {
-    display: flex;
-    gap: 8px;
-  }
-
-  .tag {
-    font-family: var(--mono);
-    font-size: 10px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border2);
-    color: var(--muted);
-    letter-spacing: 0.06em;
-  }
-
-  /* ── Layout ── */
-  .page {
-    position: relative;
-    z-index: 1;
-    max-width: 1040px;
-    margin: 0 auto;
-    padding: 3rem 1.5rem 6rem;
-  }
-
-  /* ── Hero ── */
-  .hero {
-    text-align: center;
-    margin-bottom: 3.5rem;
-    animation: fadeUp 0.6s ease both;
-  }
-
-  .hero-eyebrow {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    color: var(--green);
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-  }
-
-  .hero h1 {
-    font-family: var(--display);
-    font-size: clamp(2rem, 5vw, 3.4rem);
-    font-weight: 800;
-    line-height: 1.1;
-    color: var(--text);
-    letter-spacing: -1px;
-    margin-bottom: 1rem;
-  }
-
-  .hero h1 span { color: var(--green); }
-
-  .hero p {
-    font-size: 16px;
-    color: var(--muted);
-    max-width: 520px;
-    margin: 0 auto 2rem;
-    font-weight: 300;
-  }
-
-  .pillrow {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .pill {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 5px 14px;
-    border-radius: 20px;
-    background: var(--green-bg);
-    border: 1px solid rgba(0,229,160,0.2);
-    color: var(--green);
-  }
-
-  .pill-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
-
-  /* ── Tabs ── */
-  .tab-bar {
-    display: flex;
-    gap: 4px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 5px;
-    margin-bottom: 1.5rem;
-    animation: fadeUp 0.6s 0.1s ease both;
-  }
-
-  .tab-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 11px 16px;
-    font-family: var(--display);
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    background: transparent;
-    color: var(--muted);
-    transition: all 0.2s;
-  }
-
-  .tab-btn:hover { color: var(--text); background: var(--bg3); }
-  .tab-btn.active { background: var(--green); color: #07100e; }
-  .tab-btn.active svg { stroke: #07100e; }
-
-  .tab-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
-
-  /* ── Panels ── */
-  .panel { display: none; animation: fadeUp 0.3s ease both; }
-  .panel.active { display: block; }
-
-  /* ── Two-col grid ── */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-  }
-
-  @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
-
-  /* ── Card ── */
-  .card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 1.25rem 1.4rem;
-  }
-
-  .card-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--green);
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .card-label::before {
-    content: '';
-    display: inline-block;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--green);
-  }
-
-  /* ── Inputs ── */
-  label {
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-  }
-
-  textarea, input[type="text"], input[type="password"] {
-    width: 100%;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 11px 14px;
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--text);
-    outline: none;
-    resize: vertical;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  textarea:focus, input:focus {
-    border-color: var(--green);
-    box-shadow: 0 0 0 3px rgba(0,229,160,0.1);
-  }
-
-  .input-row {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-  }
-
-  .input-row > *:first-child { flex: 1; }
-
-  /* ── Buttons ── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 11px 20px;
-    font-family: var(--display);
-    font-size: 14px;
-    font-weight: 700;
-    border-radius: var(--radius);
-    border: 1px solid var(--border2);
-    cursor: pointer;
-    background: transparent;
-    color: var(--text);
-    transition: all 0.18s;
-    white-space: nowrap;
-  }
-
-  .btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
-  .btn:hover { background: var(--bg3); border-color: var(--border2); }
-  .btn:active { transform: scale(0.97); }
-
-  .btn-primary {
-    background: var(--green);
-    color: #07100e;
-    border-color: var(--green);
-    width: 100%;
-    padding: 13px;
-    font-size: 15px;
-    border-radius: 12px;
-    margin-top: 14px;
-    letter-spacing: 0.02em;
-  }
-
-  .btn-primary:hover { background: var(--green-dim); border-color: var(--green-dim); }
-
-  .btn-primary svg { stroke: #07100e; }
-
-  .btn-sm {
-    padding: 8px 14px;
-    font-size: 12px;
-  }
-
-  /* ── Section gap ── */
-  .gap { margin-top: 1rem; }
-  .gap-sm { margin-top: 0.6rem; }
-
-  /* ── QR output ── */
-  .qr-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 280px;
-    gap: 1rem;
-  }
-
-  .qr-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    color: var(--muted);
-    font-size: 13px;
-    font-family: var(--mono);
-  }
-
-  .qr-placeholder svg {
-    width: 52px;
-    height: 52px;
-    stroke: var(--border2);
-    fill: none;
-    stroke-width: 1.2;
-    stroke-linecap: round;
-  }
-
-  .qr-img-wrap {
-    padding: 14px;
-    background: #fff;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    display: none;
-  }
-
-  .qr-img-wrap img {
-    display: block;
-    width: 210px;
-    height: 210px;
-    border-radius: 4px;
-  }
-
-  .qr-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  /* ── Hash box ── */
-  .hash-box {
-    margin-top: 1rem;
-    padding: 10px 14px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    word-break: break-all;
-    line-height: 1.7;
-    display: none;
-  }
-
-  .hash-box strong {
-    color: var(--amber);
-    display: block;
-    margin-bottom: 4px;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-  }
-
-  /* ── Status ── */
-  .status {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--mono);
-    font-size: 12px;
-    padding: 9px 13px;
-    border-radius: var(--radius);
-    margin-top: 10px;
-  }
-
-  .status.show { display: flex; }
-  .status.success { background: var(--green-bg); border: 1px solid rgba(0,229,160,0.2); color: var(--green); }
-  .status.error   { background: var(--danger-bg); border: 1px solid rgba(255,107,107,0.2); color: var(--danger); }
-  .status.info    { background: rgba(255,193,77,0.07); border: 1px solid rgba(255,193,77,0.2); color: var(--amber); }
-
-  /* ── Result box ── */
-  .result-box {
-    margin-top: 12px;
-    padding: 14px;
-    background: var(--green-bg);
-    border: 1px solid rgba(0,229,160,0.2);
-    border-radius: var(--radius);
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--green);
-    word-break: break-word;
-    line-height: 1.7;
-    display: none;
-  }
-
-  /* ── Info strip ── */
-  .info-strip {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-top: 2.5rem;
-    animation: fadeUp 0.6s 0.2s ease both;
-  }
-
-  @media (max-width: 600px) { .info-strip { grid-template-columns: 1fr; } }
-
-  .info-tile {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 1.1rem 1.25rem;
-  }
-
-  .info-tile-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: var(--green-bg);
-    border: 1px solid rgba(0,229,160,0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-  }
-
-  .info-tile-icon svg {
-    width: 16px;
-    height: 16px;
-    stroke: var(--green);
-    fill: none;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-  }
-
-  .info-tile h3 {
-    font-family: var(--display);
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  .info-tile p {
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 300;
-    line-height: 1.5;
-  }
-
-  /* ── Loading spinner ── */
-  .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(7,16,14,0.3);
-    border-top-color: #07100e;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    flex-shrink: 0;
-  }
-
-  .spinner-green {
-    border-color: rgba(0,229,160,0.2);
-    border-top-color: var(--green);
-  }
-
-  /* ── Animations ── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── Scrollbar ── */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0a1628;
+  --bg2:       #0f1f33;
+  --bg3:       #152d47;
+  --border:    rgba(0,255,136,0.12);
+  --border2:   rgba(0,255,136,0.25);
+  --purple:    #00ff88;
+  --purple2:   #00dd77;
+  --pink:      #00ffaa;
+  --gold:      #fbbf24;
+  --text:      #e8ffff;
+  --muted:     #7db8a8;
+  --danger:    #f87171;
+  --success:   #00ff88;
+  --mono:      'Space Mono', monospace;
+  --display:   'Playfair Display', serif;
+  --body:      'Nunito', sans-serif;
+  --r:         12px;
+  --r-lg:      20px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Noise texture overlay ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.4;
+}
+
+/* ── Decorative orbs ── */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+}
+.orb-1 { width: 700px; height: 700px; background: radial-gradient(circle, #00ff8844, transparent 70%); top: -250px; left: -250px; }
+.orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, #00dd7744, transparent 70%); bottom: -150px; right: -150px; }
+.orb-3 { width: 300px; height: 300px; background: radial-gradient(circle, #00ff8822, transparent 70%); top: 40%; left: 50%; transform: translateX(-50%); }
+
+/* ── Nav ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem; height: 64px;
+  background: rgba(11,1,24,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--display);
+  font-size: 20px; font-weight: 900;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.nav-logo-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--purple2), var(--pink));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-text-fill-color: white;
+}
+
+.nav-badge {
+  font-family: var(--mono); font-size: 9px;
+  padding: 3px 10px; border-radius: 20px;
+  border: 1px solid var(--border2);
+  color: var(--muted); letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Layout ── */
+.page {
+  position: relative; z-index: 1;
+  max-width: 1060px; margin: 0 auto;
+  padding: 3.5rem 1.5rem 6rem;
+}
+
+/* ── Hero ── */
+.hero {
+  text-align: center; margin-bottom: 3.5rem;
+  animation: riseUp 0.7s cubic-bezier(.22,.68,0,1.2) both;
+}
+
+.hero-label {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--purple); margin-bottom: 1.2rem;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+
+.hero-label::before, .hero-label::after {
+  content: ''; flex: 1; max-width: 60px;
+  height: 1px; background: linear-gradient(90deg, transparent, var(--purple));
+}
+.hero-label::after { background: linear-gradient(90deg, var(--purple), transparent); }
+
+.hero h1 {
+  font-family: var(--body);
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 900; line-height: 1.1;
+  margin-bottom: 1rem; letter-spacing: -1px;
+}
+
+.hero h1 .grad {
+  background: linear-gradient(135deg, #00ff88 0%, #00ffaa 50%, #fbbf24 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  font-size: 16px; color: var(--muted);
+  max-width: 480px; margin: 0 auto 2rem; font-weight: 300;
+}
+
+.pills {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
+}
+
+.pill {
+  font-family: var(--mono); font-size: 10px;
+  padding: 5px 14px; border-radius: 20px;
+  background: rgba(192,132,252,0.08);
+  border: 1px solid rgba(192,132,252,0.2);
+  color: var(--purple); letter-spacing: 0.05em;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--purple); }
+
+/* ── Tabs ── */
+.tab-bar {
+  display: flex; gap: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 6px; margin-bottom: 1.5rem;
+  animation: riseUp 0.7s 0.1s cubic-bezier(.22,.68,0,1.2) both;
+}
+
+.tab-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 20px;
+  font-family: var(--body); font-size: 14px; font-weight: 700;
+  border: none; border-radius: 14px; cursor: pointer;
+  background: transparent; color: var(--muted);
+  transition: all 0.25s;
+}
+
+.tab-btn:hover { color: var(--text); background: var(--bg3); }
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #00dd77, #00ff88);
+  color: #001a0f;
+  box-shadow: 0 4px 20px rgba(0,255,136,0.4);
+}
+
+.tab-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Panels ── */
+.panel { display: none; animation: riseUp 0.35s ease both; }
+.panel.active { display: block; }
+
+/* ── Grid ── */
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+}
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ── Card ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  transition: border-color 0.2s;
+}
+
+.card:hover { border-color: var(--border2); }
+.card:last-child { margin-bottom: 0; }
+
+.card-title {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--purple); margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--muted); margin-bottom: 6px; letter-spacing: 0.02em;
+}
+
+textarea, input[type="password"], input[type="text"] {
+  width: 100%; padding: 12px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text);
+  font-family: var(--mono); font-size: 13px;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  resize: vertical;
+}
+
+textarea:focus, input:focus {
+  border-color: var(--purple2);
+  box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+}
+
+textarea { min-height: 120px; }
+
+/* ── Key row ── */
+.key-row { display: flex; gap: 8px; }
+.key-row input { flex: 1; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 22px; border-radius: var(--r);
+  font-family: var(--body); font-size: 14px; font-weight: 700;
+  cursor: pointer; border: none; transition: all 0.2s;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #00dd77, #00ff88);
+  color: #001a0f; width: 100%; margin-top: 1rem;
+  box-shadow: 0 4px 20px rgba(0,255,136,0.3);
+  font-size: 15px; padding: 15px;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,255,136,0.5);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-primary svg { width: 18px; height: 18px; stroke: #001a0f; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.btn-outline {
+  background: transparent; color: var(--purple);
+  border: 1px solid var(--border2);
+  padding: 8px 14px; font-size: 12px;
+}
+.btn-outline:hover { background: rgba(192,132,252,0.08); }
+.btn-outline svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Status ── */
+.status {
+  margin-top: 0.85rem; padding: 10px 14px;
+  border-radius: var(--r); font-size: 13px; font-weight: 600;
+  display: none; font-family: var(--mono);
+}
+.status.show { display: block; }
+.status.success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: var(--success); }
+.status.error   { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); }
+.status.info    { background: rgba(192,132,252,0.08); border: 1px solid rgba(192,132,252,0.2); color: var(--purple); }
+
+/* ── Key strength ── */
+.key-strength { margin-top: 0.5rem; font-family: var(--mono); font-size: 11px; display: none; }
+.key-strength.show { display: block; }
+.key-strength.success { color: var(--success); }
+.key-strength.error   { color: var(--danger); }
+.key-strength.info    { color: var(--gold); }
+
+/* ── QR panel ── */
+.qr-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1.5rem;
+  display: flex; flex-direction: column;
+  height: 100%;
+}
+
+.qr-placeholder {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 260px; border: 2px dashed var(--border);
+  border-radius: var(--r); gap: 12px; color: var(--muted);
+}
+
+.qr-placeholder svg { width: 48px; height: 48px; stroke: var(--border2); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.6; }
+.qr-placeholder p { font-size: 13px; font-family: var(--mono); }
+
+.qr-img-wrap { display: none; text-align: center; }
+.qr-img-wrap img {
+  max-width: 220px; width: 100%; border-radius: var(--r);
+  box-shadow: 0 0 40px rgba(192,132,252,0.3);
+  border: 3px solid var(--border2);
+}
+
+.hash-box {
+  display: none; margin-top: 1rem;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 14px;
+}
+.hash-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+.hash-val { font-family: var(--mono); font-size: 10px; color: var(--purple); word-break: break-all; line-height: 1.5; }
+
+.qr-actions { display: flex; gap: 8px; margin-top: 1rem; flex-wrap: wrap; }
+
+/* ── Result box ── */
+.result-box {
+  display: none; margin-top: 1rem;
+  background: rgba(52,211,153,0.05);
+  border: 1px solid rgba(52,211,153,0.2);
+  border-radius: var(--r); padding: 14px;
+  font-family: var(--mono); font-size: 13px;
+  color: var(--success); word-break: break-all; line-height: 1.6;
+}
+
+/* ── Info strip ── */
+.info-strip {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+  margin-top: 3rem;
+  animation: riseUp 0.7s 0.3s cubic-bezier(.22,.68,0,1.2) both;
+}
+@media (max-width: 600px) { .info-strip { grid-template-columns: 1fr; } }
+
+.info-tile {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 1.25rem;
+  text-align: center;
+}
+
+.info-tile-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,255,170,0.1));
+  border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 0.85rem;
+}
+
+.info-tile-icon svg { width: 20px; height: 20px; stroke: var(--purple); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.info-tile h3 {
+  font-family: var(--display); font-size: 15px; font-weight: 700;
+  margin-bottom: 0.4rem; color: var(--text);
+}
+
+.info-tile p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* ── Animations ── */
+@keyframes riseUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Spinner ── */
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <div class="orb orb-1"></div>
 <div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
 
-<!-- Nav -->
 <nav>
   <div class="nav-logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <rect x="3" y="11" width="18" height="11" rx="2"/>
-      <path d="M7 11V7a5 5 0 0110 0v4"/>
-    </svg>
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/>
+        <rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/>
+        <rect x="18" y="18" width="3" height="3"/>
+      </svg>
+    </div>
     SecureQR
   </div>
-  <div class="nav-tags">
-    <span class="tag">AES-256-CBC</span>
-    <span class="tag">SHA-256</span>
-    <span class="tag">PBKDF2</span>
+  <div style="display:flex;gap:8px;">
+    <span class="nav-badge">AES-256</span>
+    <span class="nav-badge">SHA-256</span>
   </div>
 </nav>
 
-<!-- Page -->
 <div class="page">
 
   <!-- Hero -->
   <div class="hero">
-    <div class="hero-eyebrow">Python · Flask · Cryptography</div>
-    <h1>Secure Data Sharing<br/>via <span>Encrypted QR</span></h1>
-    <p>Encrypt any message with AES-256, verify integrity with SHA-256, and transmit safely through QR codes.</p>
-    <div class="pillrow">
-      <span class="pill"><span class="pill-dot"></span>AES-256-CBC Encryption</span>
-      <span class="pill"><span class="pill-dot"></span>SHA-256 Integrity Hash</span>
-      <span class="pill"><span class="pill-dot"></span>PBKDF2 Key Derivation</span>
-      <span class="pill"><span class="pill-dot"></span>QR Code Generation</span>
+    <div class="hero-label">Encrypted QR Code System</div>
+    <h1>Secure Data <span class="grad">Sharing</span><br>via <span class="grad">Encrypted QR</span></h1>
+    <p>Encrypt your sensitive information with AES-256, embed it in a QR code, and share it safely.</p>
+    <div class="pills">
+      <span class="pill">AES-256-CBC</span>
+      <span class="pill">PBKDF2 Key Derivation</span>
+      <span class="pill">SHA-256 Integrity</span>
+      <span class="pill">Zero Server Storage</span>
     </div>
   </div>
 
@@ -571,11 +431,11 @@
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('encrypt', this)">
       <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-      Encrypt &amp; Generate
+      Encrypt & Generate QR
     </button>
     <button class="tab-btn" onclick="switchTab('decrypt', this)">
-      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke-dasharray="2 3"/></svg>
-      Scan &amp; Decrypt
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/><path d="M17 11V7"/></svg>
+      Decrypt Message
     </button>
   </div>
 
@@ -586,63 +446,63 @@
       <!-- Left: inputs -->
       <div>
         <div class="card">
-          <div class="card-label">Plaintext message</div>
-          <label>Message to encrypt</label>
-          <textarea id="enc-msg" rows="5" placeholder="Enter your sensitive message…"></textarea>
+          <div class="card-title">Message</div>
+          <label>Enter the message to encrypt</label>
+          <textarea id="enc-msg" placeholder="Type your sensitive message here…"></textarea>
         </div>
 
-        <div class="card gap">
-          <div class="card-label">Secret key</div>
-          <label>Shared key (min. 6 characters)</label>
-          <div class="input-row">
-            <div>
-              <input type="password" id="enc-key" placeholder="Enter a strong secret key…" />
-            </div>
-            <button class="btn btn-sm" onclick="generateKey()">Generate</button>
+        <div class="card">
+          <div class="card-title">Secret Key</div>
+          <label>Encryption password (min. 6 characters)</label>
+          <div class="key-row">
+            <input type="password" id="enc-key" placeholder="Enter a strong secret key…" />
+            <button class="btn btn-outline" onclick="generateKey()">
+              <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              Generate
+            </button>
           </div>
-          <div id="key-strength" class="status"></div>
+          <div id="key-strength" class="key-strength"></div>
         </div>
 
-        <button class="btn btn-primary" onclick="doEncrypt()">
-          <svg viewBox="0 0 24 24" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <button class="btn btn-primary" id="enc-btn" onclick="doEncrypt()">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           Encrypt &amp; Generate QR Code
         </button>
-
         <div id="enc-status" class="status"></div>
-
-        <div id="hash-box" class="hash-box">
-          <strong>SHA-256 INTEGRITY HASH</strong>
-          <span id="hash-val"></span>
-        </div>
       </div>
 
       <!-- Right: QR output -->
-      <div class="card qr-card">
-        <div class="card-label" style="align-self:flex-start;">QR Output</div>
+      <div>
+        <div class="qr-card">
+          <div class="card-title">QR Output</div>
 
-        <div id="qr-placeholder" class="qr-placeholder">
-          <svg viewBox="0 0 24 24">
-            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/>
-            <rect x="19" y="14" width="2" height="2"/><rect x="14" y="19" width="2" height="2"/>
-            <rect x="18" y="18" width="3" height="3" rx=".5"/>
-          </svg>
-          QR code will appear here
-        </div>
+          <div id="qr-placeholder" class="qr-placeholder">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/>
+            </svg>
+            <p>QR code will appear here</p>
+          </div>
 
-        <div id="qr-wrap" class="qr-img-wrap">
-          <img id="qr-img" src="" alt="QR Code" />
-        </div>
+          <div id="qr-img-wrap" class="qr-img-wrap">
+            <img id="qr-img" src="" alt="Encrypted QR Code" />
+          </div>
 
-        <div class="qr-actions">
-          <button class="btn btn-sm" id="btn-download" style="display:none" onclick="downloadQR()">
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download PNG
-          </button>
-          <button class="btn btn-sm" id="btn-copy-payload" style="display:none" onclick="copyPayload()">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-            Copy Payload
-          </button>
+          <div id="hash-box" class="hash-box">
+            <div class="hash-label">SHA-256 Integrity Hash</div>
+            <div class="hash-val" id="hash-val"></div>
+          </div>
+
+          <div class="qr-actions" id="qr-actions" style="display:none;">
+            <button class="btn btn-outline" onclick="downloadQR()">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download PNG
+            </button>
+            <button class="btn btn-outline" onclick="copyPayload()">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copy Payload
+            </button>
+          </div>
         </div>
       </div>
 
@@ -655,19 +515,19 @@
 
       <div>
         <div class="card">
-          <div class="card-label">Encrypted payload</div>
+          <div class="card-title">Encrypted Payload</div>
           <label>Paste JSON payload (from QR scan or sender)</label>
           <textarea id="dec-payload" rows="8" placeholder='{"salt":"…","iv":"…","ct":"…","hash":"…"}'></textarea>
         </div>
 
-        <div class="card gap">
-          <div class="card-label">Decryption key</div>
+        <div class="card">
+          <div class="card-title">Decryption Key</div>
           <label>Same secret key used during encryption</label>
           <input type="password" id="dec-key" placeholder="Enter the shared secret key…" />
         </div>
 
-        <button class="btn btn-primary" onclick="doDecrypt()">
-          <svg viewBox="0 0 24 24" stroke-width="2.2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.56.93 6.17 2.44"/></svg>
+        <button class="btn btn-primary" id="dec-btn" onclick="doDecrypt()">
+          <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/></svg>
           Decrypt Message
         </button>
 
@@ -675,38 +535,38 @@
         <div id="dec-result" class="result-box"></div>
       </div>
 
-      <!-- Right: instructions -->
+      <!-- Right: Instructions -->
       <div>
         <div class="card" style="height:100%;">
-          <div class="card-label">How to decrypt</div>
-          <div style="display:flex;flex-direction:column;gap:1.1rem;margin-top:0.5rem;">
+          <div class="card-title">How to Decrypt</div>
+          <div style="display:flex;flex-direction:column;gap:1.2rem;margin-top:0.5rem;">
 
-            <div style="display:flex;gap:12px;align-items:flex-start;">
-              <div style="min-width:28px;height:28px;border-radius:50%;background:var(--green-bg);border:1px solid rgba(0,229,160,0.2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--green);font-weight:500;">1</div>
+            <div style="display:flex;gap:14px;align-items:flex-start;">
+              <div style="min-width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#00dd77,#00ff88);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:#001a0f;font-weight:700;flex-shrink:0;">1</div>
               <div>
                 <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">Scan the QR code</div>
-                <div style="font-size:12px;color:var(--muted);">Use any QR scanner app to read the encrypted payload, then paste it in the field on the left.</div>
+                <div style="font-size:12px;color:var(--muted);">Use any QR scanner app. It will reveal an encrypted JSON payload — copy it.</div>
               </div>
             </div>
 
-            <div style="display:flex;gap:12px;align-items:flex-start;">
-              <div style="min-width:28px;height:28px;border-radius:50%;background:var(--green-bg);border:1px solid rgba(0,229,160,0.2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--green);font-weight:500;">2</div>
+            <div style="display:flex;gap:14px;align-items:flex-start;">
+              <div style="min-width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#00dd77,#00ff88);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:#001a0f;font-weight:700;flex-shrink:0;">2</div>
               <div>
-                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">Enter the shared key</div>
-                <div style="font-size:12px;color:var(--muted);">The sender must share the secret key with you securely (e.g. verbally or via a separate encrypted channel).</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">Paste &amp; enter key</div>
+                <div style="font-size:12px;color:var(--muted);">Paste the payload above and enter the secret key shared by the sender.</div>
               </div>
             </div>
 
-            <div style="display:flex;gap:12px;align-items:flex-start;">
-              <div style="min-width:28px;height:28px;border-radius:50%;background:var(--green-bg);border:1px solid rgba(0,229,160,0.2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--green);font-weight:500;">3</div>
+            <div style="display:flex;gap:14px;align-items:flex-start;">
+              <div style="min-width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#00dd77,#00ff88);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:#001a0f;font-weight:700;flex-shrink:0;">3</div>
               <div>
-                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">Verify &amp; decrypt</div>
-                <div style="font-size:12px;color:var(--muted);">The app automatically verifies the SHA-256 integrity hash after decryption to confirm the message is untampered.</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">Verify &amp; read</div>
+                <div style="font-size:12px;color:var(--muted);">SHA-256 hash is verified automatically — confirming the message is untampered.</div>
               </div>
             </div>
 
-            <div style="margin-top:0.5rem;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);">
-              <div style="font-family:var(--mono);font-size:10px;color:var(--amber);letter-spacing:0.08em;margin-bottom:6px;">SECURITY NOTE</div>
+            <div style="margin-top:0.5rem;padding:12px 14px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:var(--r);">
+              <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;color:var(--gold);text-transform:uppercase;margin-bottom:6px;">⚠ Security Note</div>
               <div style="font-size:12px;color:var(--muted);line-height:1.6;">Never share the secret key through the same channel as the QR code. Use a separate, trusted medium.</div>
             </div>
           </div>
@@ -716,32 +576,32 @@
     </div>
   </div>
 
-  <!-- Info strip -->
+  <!-- Info Strip -->
   <div class="info-strip">
     <div class="info-tile">
       <div class="info-tile-icon">
         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
       </div>
       <h3>AES-256-CBC</h3>
-      <p>Military-grade symmetric encryption with PKCS7 padding and a random IV per message.</p>
+      <p>Military-grade symmetric encryption with a random IV per message — same input never yields the same output.</p>
     </div>
     <div class="info-tile">
       <div class="info-tile-icon">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
       </div>
       <h3>PBKDF2 Key Derivation</h3>
-      <p>Your password is stretched into a 256-bit key using 200,000 iterations of HMAC-SHA256.</p>
+      <p>Your password is stretched into a 256-bit key using 200,000 iterations of HMAC-SHA256 with a random salt.</p>
     </div>
     <div class="info-tile">
       <div class="info-tile-icon">
         <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/></svg>
       </div>
       <h3>SHA-256 Integrity</h3>
-      <p>Every payload includes a hash of the original message to detect any tampering during transit.</p>
+      <p>Every payload includes a hash of the original message to detect any tampering during transmission.</p>
     </div>
   </div>
 
-</div><!-- /page -->
+</div>
 
 <script>
   let currentPayloadJson = null;
@@ -755,19 +615,19 @@
 
   function generateKey() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*';
-    const arr   = new Uint8Array(20);
+    const arr = new Uint8Array(20);
     crypto.getRandomValues(arr);
     const key = Array.from(arr).map(b => chars[b % chars.length]).join('');
     document.getElementById('enc-key').value = key;
-    showStatus('key-strength', '✓ Strong 20-character key generated', 'success');
+    showStrength('key-strength', '✓ Strong 20-character key generated', 'success');
   }
 
   document.getElementById('enc-key').addEventListener('input', function () {
     const v = this.value;
-    if (!v) { hideStatus('key-strength'); return; }
-    if (v.length < 6)  showStatus('key-strength', '✗ Too short — min 6 characters', 'error');
-    else if (v.length < 12) showStatus('key-strength', '~ Acceptable, longer is better', 'info');
-    else showStatus('key-strength', '✓ Strong key', 'success');
+    if (!v) { hideEl('key-strength'); return; }
+    if (v.length < 6)  showStrength('key-strength', '✗ Too short — min 6 characters', 'error');
+    else if (v.length < 12) showStrength('key-strength', '~ Acceptable, longer is better', 'info');
+    else showStrength('key-strength', '✓ Strong key', 'success');
   });
 
   async function doEncrypt() {
@@ -776,30 +636,34 @@
     if (!msg || !key) { showStatus('enc-status', '⚠ Both message and key are required.', 'error'); return; }
     if (key.length < 6) { showStatus('enc-status', '⚠ Key must be at least 6 characters.', 'error'); return; }
 
+    setLoading('enc-btn', true);
     showStatus('enc-status', '⏳ Encrypting…', 'info');
 
     try {
-      const res  = await fetch('/api/encrypt', {
+      const res = await fetch('http://localhost:5000/api/encrypt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msg, password: key }),
       });
-      const data = await res.json();
+
+      let data;
+      try { data = await res.json(); }
+      catch { throw new Error('Server returned an invalid response. Is Flask running?'); }
+
       if (!res.ok) { showStatus('enc-status', '✗ ' + data.error, 'error'); return; }
 
       currentPayloadJson = JSON.stringify(data.payload, null, 2);
       document.getElementById('qr-img').src = data.qr_image;
-      document.getElementById('qr-wrap').style.display = 'inline-block';
+      document.getElementById('qr-img-wrap').style.display = 'block';
       document.getElementById('qr-placeholder').style.display = 'none';
-      document.getElementById('btn-download').style.display = 'inline-flex';
-      document.getElementById('btn-copy-payload').style.display = 'inline-flex';
-
       document.getElementById('hash-val').textContent = data.hash;
       document.getElementById('hash-box').style.display = 'block';
-
+      document.getElementById('qr-actions').style.display = 'flex';
       showStatus('enc-status', '✓ Encrypted successfully. QR code ready.', 'success');
     } catch (e) {
-      showStatus('enc-status', '✗ Network error: ' + e.message, 'error');
+      showStatus('enc-status', '✗ ' + e.message, 'error');
+    } finally {
+      setLoading('enc-btn', false);
     }
   }
 
@@ -808,16 +672,21 @@
     const key     = document.getElementById('dec-key').value.trim();
     if (!payload || !key) { showStatus('dec-status', '⚠ Payload and key are required.', 'error'); return; }
 
+    setLoading('dec-btn', true);
     showStatus('dec-status', '⏳ Decrypting…', 'info');
     document.getElementById('dec-result').style.display = 'none';
 
     try {
-      const res  = await fetch('/api/decrypt', {
+      const res = await fetch('http://localhost:5000/api/decrypt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payload, password: key }),
       });
-      const data = await res.json();
+
+      let data;
+      try { data = await res.json(); }
+      catch { throw new Error('Server returned an invalid response. Is Flask running?'); }
+
       if (!res.ok) { showStatus('dec-status', '✗ ' + data.error, 'error'); return; }
 
       showStatus('dec-status', '✓ Decrypted successfully. SHA-256 integrity verified.', 'success');
@@ -825,13 +694,15 @@
       box.textContent = data.message;
       box.style.display = 'block';
     } catch (e) {
-      showStatus('dec-status', '✗ Network error: ' + e.message, 'error');
+      showStatus('dec-status', '✗ ' + e.message, 'error');
+    } finally {
+      setLoading('dec-btn', false);
     }
   }
 
   async function downloadQR() {
     if (!currentPayloadJson) return;
-    const res  = await fetch('/api/download-qr', {
+    const res  = await fetch('http://localhost:5000/api/download-qr', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ payload: currentPayloadJson }),
@@ -850,14 +721,32 @@
     });
   }
 
+  function setLoading(id, on) {
+    const btn = document.getElementById(id);
+    if (on) {
+      btn._orig = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> Working…';
+      btn.disabled = true;
+    } else {
+      btn.innerHTML = btn._orig;
+      btn.disabled = false;
+    }
+  }
+
   function showStatus(id, msg, type) {
     const el = document.getElementById(id);
     el.className = 'status show ' + type;
     el.textContent = msg;
   }
 
-  function hideStatus(id) {
-    document.getElementById(id).className = 'status';
+  function showStrength(id, msg, type) {
+    const el = document.getElementById(id);
+    el.className = 'key-strength show ' + type;
+    el.textContent = msg;
+  }
+
+  function hideEl(id) {
+    document.getElementById(id).className = 'key-strength';
   }
 </script>
 </body>
